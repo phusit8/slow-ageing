@@ -1,8 +1,26 @@
 "use client";
 
 import { Icon } from "@iconify/react";
+import { useLiff } from "@/hooks/useLiff";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function Home() {
+
+  const router = useRouter();
+  const { isReady, isLoggedIn, isLoggingIn, profile, error, login } = useLiff()
+
+  useEffect(() => {
+    if (isReady && isLoggedIn && profile) {
+      router.push('/home');
+    }
+  }
+    , [isReady, isLoggedIn, profile, router]
+  );
+
+  const handleLogin = () => {
+    login();
+  };
   return (
     <div className="flex flex-col min-h-screen w-full justify-between " style={{ background: "#f5f7f5" }}>
       <div className="w-full max-w-md sm:max-w-lg mx-auto flex-1 flex flex-col justify-between">
@@ -17,13 +35,17 @@ export default function Home() {
         </div>
       </div>
       <div className="px-6 pb-8 sm:pb-12 pt-6">
-        <button className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl shadow-lg text-lg font-bold cursor-pointer transition-transform active:scale-[0.98]" style={{background:"#06c755",color:"white",}}>
-         <svg viewBox="0 0 24 24"
-         className="w-6 h-6"
-         fill="white">
-          <path d="M12 2C6.48 2 2 5.92 2 10.72c0 3.11 1.72 5.85 4.33 7.54L5.25 22l4.72-2.52c.66.18 1.34.27 2.03.27 5.52 0 10-3.92 10-8.75C22 5.92 17.52 2 12 2z"/>
-         </svg>
-          <span>เข้าสู่ระบบด้วย LINE</span>
+        <button onClick={handleLogin} disabled={!isReady || isLoggedIn} className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl shadow-lg text-lg font-bold cursor-pointer transition-transform active:scale-[0.98]" style={{ background: "#06c755", color: "white", }}>
+          <svg viewBox="0 0 24 24"
+            className="w-6 h-6"
+            fill="white">
+            <path d="M12 2C6.48 2 2 5.92 2 10.72c0 3.11 1.72 5.85 4.33 7.54L5.25 22l4.72-2.52c.66.18 1.34.27 2.03.27 5.52 0 10-3.92 10-8.75C22 5.92 17.52 2 12 2z" />
+          </svg>
+          {isLoggingIn ? (
+            <span>กำลังเข้าสู่ระบบ...</span>
+          ) : (
+            <span>เข้าสู่ระบบด้วย LINE</span>
+          )}
         </button>
         <p className="text-sm text-center mt-3" style={{ color: "#9aada9" }}>ระบบนี้รองรับการเข้าสู่ระบบผ่าน LINE เท่านั้น</p>
       </div>
