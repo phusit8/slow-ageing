@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { initLiff } from "@/lib/liff";
 
 export interface LiffProfile {
@@ -27,42 +27,72 @@ export function useLiff() {
     error: null,
   });
 
-  // init ตอนโหลดหน้า — เช็คว่าล็อกอินอยู่แล้วหรือยัง
+  const isMountedRef = useRef(true);
+
   useEffect(() => {
-    let cancelled = false;
+    isMountedRef.current = true;
 
     async function setup() {
       try {
         const liff = await initLiff();
-        if (cancelled) return;
 
         const loggedIn = liff.isLoggedIn();
 
         if (loggedIn) {
-          const profile = await liff.getProfile();
-          if (cancelled) return;
-          setState((s) => ({
-            ...s,
-            isReady: true,
-            isLoggedIn: true,
-            profile,
-          }));
+          try {
+            const profile = await liff.getProfile();
+            if (isMountedRef.current) {
+              setState({
+                isReady: true,
+                isLoggedIn: true,
+                isLoggingIn: false,
+                profile,
+                error: null,
+              });
+            }
+          } catch (profileErr) {
+            // หากดึง profile ไม่สำเร็จแต่ล็อกอินอยู่
+            if (isMountedRef.current) {
+              setState({
+                isReady: true,
+                isLoggedIn: true,
+                isLoggingIn: false,
+                profile: null,
+                error:
+                  profileErr instanceof Error
+                    ? profileErr.message
+                    : "Failed to load profile",
+              });
+            }
+          }
         } else {
-          setState((s) => ({ ...s, isReady: true, isLoggedIn: false }));
+          if (isMountedRef.current) {
+            setState({
+              isReady: true,
+              isLoggedIn: false,
+              isLoggingIn: false,
+              profile: null,
+              error: null,
+            });
+          }
         }
       } catch (err) {
-        if (cancelled) return;
-        setState((s) => ({
-          ...s,
-          isReady: true,
-          error: err instanceof Error ? err.message : "LIFF init failed",
-        }));
+        if (isMountedRef.current) {
+          setState({
+            isReady: true,
+            isLoggedIn: false,
+            isLoggingIn: false,
+            profile: null,
+            error: err instanceof Error ? err.message : "LIFF init failed",
+          });
+        }
       }
     }
 
     setup();
+
     return () => {
-      cancelled = true;
+      isMountedRef.current = false;
     };
   }, []);
 
@@ -74,20 +104,20 @@ export function useLiff() {
 
       if (liff.isLoggedIn()) {
         const profile = await liff.getProfile();
-        setState((s) => ({
-          ...s,
-          isLoggingIn: false,
+        setState({
+          isReady: true,
           isLoggedIn: true,
+          isLoggingIn: false,
           profile,
-        }));
+          error: null,
+        });
         window.location.replace("/home");
         return;
       }
 
-      // ให้ redirect ไปที่ /home โดยตรงหลังจากล็อกอินสำเร็จ
-      const targetRedirect = window.location.origin + "/home";
+      // ใน LINE App หรือ Browser ให้ใช้ Endpoint URL ปัจจุบัน
       liff.login({
-        redirectUri: targetRedirect,
+        redirectUri: window.location.origin + "/",
       });
     } catch (err) {
       setState((s) => ({
@@ -104,7 +134,13 @@ export function useLiff() {
       if (liff.isLoggedIn()) {
         liff.logout();
       }
-      setState((s) => ({ ...s, isLoggedIn: false, profile: null }));
+      setState({
+        isReady: true,
+        isLoggedIn: false,
+        isLoggingIn: false,
+        profile: null,
+        error: null,
+      });
     } catch {
       setState((s) => ({ ...s, isLoggedIn: false, profile: null }));
     }
