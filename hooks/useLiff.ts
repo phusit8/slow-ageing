@@ -27,7 +27,7 @@ export function useLiff() {
     error: null,
   });
 
-  // init ตอนโหลดหน้า — เช็คว่าล็อกอินอยู่แล้วหรือยัง (กรณี redirect กลับมาจาก LINE)
+  // init ตอนโหลดหน้า — เช็คว่าล็อกอินอยู่แล้วหรือยัง
   useEffect(() => {
     let cancelled = false;
 
@@ -73,7 +73,6 @@ export function useLiff() {
       const liff = await initLiff();
 
       if (liff.isLoggedIn()) {
-        // ล็อกอินอยู่แล้ว ไม่ต้อง redirect ซ้ำ
         const profile = await liff.getProfile();
         setState((s) => ({
           ...s,
@@ -81,14 +80,15 @@ export function useLiff() {
           isLoggedIn: true,
           profile,
         }));
+        window.location.replace("/home");
         return;
       }
 
-      // ยังไม่ล็อกอิน -> liff.login() จะ redirect ออกไปหน้า LINE
+      // ให้ redirect ไปที่ /home โดยตรงหลังจากล็อกอินสำเร็จ
+      const targetRedirect = window.location.origin + "/home";
       liff.login({
-        redirectUri: window.location.href,
+        redirectUri: targetRedirect,
       });
-      // โค้ดหลังบรรทัดนี้จะไม่ทำงานเพราะหน้าเว็บ redirect ออกไปแล้ว
     } catch (err) {
       setState((s) => ({
         ...s,
@@ -99,9 +99,15 @@ export function useLiff() {
   }, []);
 
   const logout = useCallback(async () => {
-    const liff = await initLiff();
-    liff.logout();
-    setState((s) => ({ ...s, isLoggedIn: false, profile: null }));
+    try {
+      const liff = await initLiff();
+      if (liff.isLoggedIn()) {
+        liff.logout();
+      }
+      setState((s) => ({ ...s, isLoggedIn: false, profile: null }));
+    } catch {
+      setState((s) => ({ ...s, isLoggedIn: false, profile: null }));
+    }
   }, []);
 
   return { ...state, login, logout };

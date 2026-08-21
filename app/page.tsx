@@ -2,18 +2,16 @@
 
 import { Icon } from "@iconify/react";
 import { useLiff } from "@/hooks/useLiff";
-import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 export default function Home() {
-  const router = useRouter();
   const { isReady, isLoggedIn, isLoggingIn, profile, error, login } = useLiff();
 
   useEffect(() => {
     if (isReady && isLoggedIn && profile) {
-      router.push("/home");
+      window.location.replace("/home");
     }
-  }, [isReady, isLoggedIn, profile, router]);
+  }, [isReady, isLoggedIn, profile]);
 
   const handleLogin = () => {
     login();
