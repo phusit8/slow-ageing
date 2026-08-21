@@ -2,19 +2,36 @@
 
 import { Icon } from "@iconify/react";
 import { useLiff } from "@/hooks/useLiff";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function Home() {
   const { isReady, isLoggedIn, isLoggingIn, profile, error, login } = useLiff();
+  const [isLoggedOutManual, setIsLoggedOutManual] = useState(false);
 
   useEffect(() => {
-    if (isReady && isLoggedIn && profile) {
+    const isManual =
+      typeof window !== "undefined" &&
+      sessionStorage.getItem("manual_logout") === "true";
+
+    setIsLoggedOutManual(isManual);
+
+    // ทำการ Auto-Redirect เข้า /home เฉพาะตอนที่ผู้ใช้ไม่ได้กดออกจากระบบเอง
+    if (isReady && isLoggedIn && profile && !isManual) {
       window.location.replace("/home");
     }
   }, [isReady, isLoggedIn, profile]);
 
   const handleLogin = () => {
-    login();
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("manual_logout");
+    }
+    setIsLoggedOutManual(false);
+
+    if (isLoggedIn && profile) {
+      window.location.replace("/home");
+    } else {
+      login();
+    }
   };
 
   return (
@@ -64,9 +81,9 @@ export default function Home() {
 
         <button
           onClick={handleLogin}
-          disabled={!isReady || isLoggingIn || isLoggedIn}
+          disabled={!isReady || isLoggingIn}
           className={`w-full flex items-center justify-center gap-3 py-4 rounded-2xl shadow-lg text-lg font-bold transition-transform ${
-            !isReady || isLoggingIn || isLoggedIn
+            !isReady || isLoggingIn
               ? "opacity-60 cursor-not-allowed"
               : "cursor-pointer active:scale-[0.98]"
           }`}
@@ -79,8 +96,6 @@ export default function Home() {
             <span>กำลังเตรียมระบบ LINE...</span>
           ) : isLoggingIn ? (
             <span>กำลังเข้าสู่ระบบ...</span>
-          ) : isLoggedIn ? (
-            <span>เข้าสู่ระบบแล้ว</span>
           ) : (
             <span>เข้าสู่ระบบด้วย LINE</span>
           )}

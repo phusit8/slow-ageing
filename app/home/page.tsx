@@ -1,12 +1,11 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { Icon } from "@iconify/react";
 import { useLiff } from "@/hooks/useLiff";
 
 export default function HomePage() {
-  const router = useRouter();
-  const { isReady, isLoggedIn, profile, error, logout } = useLiff();
+  const { isReady, isLoggedIn, isInClient, profile, error, logout, closeWindow } =
+    useLiff();
 
   // กำลังเช็คสถานะการเข้าสู่ระบบ
   if (!isReady) {
@@ -21,7 +20,7 @@ export default function HomePage() {
         </p>
         <button
           onClick={() => (window.location.href = "/")}
-          className="text-xs mt-4 underline text-stone-400 hover:text-stone-600"
+          className="text-xs mt-4 underline text-stone-400 hover:text-stone-600 cursor-pointer"
         >
           หากรอนานเกินไป กดที่นี่เพื่อกลับหน้าแรก
         </button>
@@ -71,16 +70,24 @@ export default function HomePage() {
       <div className="w-full max-w-md sm:max-w-lg mx-auto flex-1 flex flex-col px-6 sm:px-8 pt-10 pb-8">
         {/* Badge ยืนยันว่า login สำเร็จ */}
         <div
-          className="flex items-center gap-2 px-4 py-2 rounded-xl mb-6 w-fit shadow-xs"
+          className="flex items-center justify-between gap-2 px-4 py-2 rounded-xl mb-6 w-full shadow-xs"
           style={{ background: "#e6f7ea" }}
         >
-          <Icon
-            icon="mdi:check-circle"
-            style={{ color: "#06c755", fontSize: "20px" }}
-          />
-          <span className="text-sm font-medium" style={{ color: "#1a2e1a" }}>
-            เข้าสู่ระบบด้วย LINE สำเร็จ
-          </span>
+          <div className="flex items-center gap-2">
+            <Icon
+              icon="mdi:check-circle"
+              style={{ color: "#06c755", fontSize: "20px" }}
+            />
+            <span className="text-sm font-medium" style={{ color: "#1a2e1a" }}>
+              เข้าสู่ระบบด้วย LINE สำเร็จ
+            </span>
+          </div>
+
+          {isInClient && (
+            <span className="text-[11px] font-semibold bg-emerald-200/60 text-emerald-800 px-2 py-0.5 rounded-md">
+              LINE In-App
+            </span>
+          )}
         </div>
 
         {/* การ์ดโปรไฟล์ */}
@@ -142,17 +149,29 @@ export default function HomePage() {
           </p>
         )}
 
-        <button
-          onClick={handleLogout}
-          className="w-full py-3.5 rounded-2xl font-bold border cursor-pointer active:scale-[0.98] transition-transform shadow-xs mt-auto"
-          style={{
-            borderColor: "#e53e3e",
-            color: "#e53e3e",
-            background: "white",
-          }}
-        >
-          ออกจากระบบ (ทดสอบใหม่)
-        </button>
+        <div className="mt-auto space-y-2.5">
+          {isInClient && (
+            <button
+              onClick={closeWindow}
+              className="w-full py-3.5 rounded-2xl font-bold text-white cursor-pointer active:scale-[0.98] transition-transform shadow-md"
+              style={{ background: "#2d7a3a" }}
+            >
+              ปิดหน้าต่าง LINE
+            </button>
+          )}
+
+          <button
+            onClick={handleLogout}
+            className="w-full py-3 rounded-2xl font-bold border cursor-pointer active:scale-[0.98] transition-transform text-sm"
+            style={{
+              borderColor: "#e53e3e",
+              color: "#e53e3e",
+              background: "white",
+            }}
+          >
+            ออกจากระบบ (ทดสอบเข้าสู่ระบบใหม่)
+          </button>
+        </div>
       </div>
     </div>
   );
